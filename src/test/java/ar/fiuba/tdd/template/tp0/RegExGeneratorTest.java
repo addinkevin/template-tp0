@@ -10,12 +10,13 @@ import static org.junit.Assert.assertTrue;
 
 public class RegExGeneratorTest {
 
+    private int maxLength = 10;
+
     private boolean validate(String regEx, int numberOfResults) {
-        RegExGenerator generator = new RegExGenerator();
-        // TODO: Uncomment parameters
-        List<String> results = generator.generate(/*regEx, numberOfResults*/);
+        RegExGenerator generator = new RegExGenerator(this.maxLength);
+        List<String> results = generator.generate(regEx, numberOfResults);
         // force matching the beginning and the end of the strings
-        Pattern pattern = Pattern.compile("^" + regEx + "$");
+        Pattern pattern = Pattern.compile("^" + regEx + "$", Pattern.DOTALL);
         return results
                 .stream()
                 .reduce(true,
@@ -26,8 +27,7 @@ public class RegExGeneratorTest {
                     (item1, item2) -> item1 && item2);
     }
 
-    //TODO: Uncomment these tests
-    /*
+
     @Test
     public void testAnyCharacter() {
         assertTrue(validate(".", 1));
@@ -62,6 +62,24 @@ public class RegExGeneratorTest {
     public void testCharacterSetWithQuantifiers() {
         assertTrue(validate("[abc]+", 1));
     }
-    */
-    // TODO: Add more tests!!!
+
+    @Test
+    public void testGeneral() {
+        assertTrue(validate(".*", 10000));
+        assertTrue(validate(".+", 100));
+        assertTrue(validate("\\.", 100));
+        assertTrue(validate("\\..", 100));
+        assertTrue(validate("\\.*", 100));
+        assertTrue(validate("hola", 100));
+        assertTrue(validate("ho.a", 100));
+        assertTrue(validate("hol?a", 100));
+        assertTrue(validate("hol*a", 100));
+        assertTrue(validate("", 100));
+        assertTrue(validate("a", 100));
+        assertTrue(validate("[a.]", 100));
+        assertTrue(validate("[a\\[\\]]", 100));
+        assertTrue(validate("a.d?h*[abc]+", 100));
+        assertTrue(validate("\\\\", 100));
+    }
+
 }
