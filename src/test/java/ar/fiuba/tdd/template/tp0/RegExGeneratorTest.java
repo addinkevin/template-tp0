@@ -79,7 +79,6 @@ public class RegExGeneratorTest {
         assertTrue(validate("[a.]", 100));
         assertTrue(validate("[a\\[\\]]", 100));
         assertTrue(validate("a.d?h*[abc]+", 100));
-        assertTrue(validate("\\\\", 100));
     }
 
 }
