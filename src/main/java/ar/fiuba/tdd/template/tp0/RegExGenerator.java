@@ -7,11 +7,10 @@ import java.util.StringJoiner;
 
 public class RegExGenerator {
     private int maxLength;
-    private String acumString;
+    private int indexRegEx;
 
     public RegExGenerator(int maxLength) {
         this.maxLength = maxLength;
-        this.acumString =  "";
     }
 
     private boolean isQuantifier(char character) {
@@ -21,24 +20,46 @@ public class RegExGenerator {
         return false;
     }
 
-    private int getSetTokenFromToken(String regEx, int index) {
-        char character = '[';
-        int regexLength = regEx.length();
-        while ( index < regexLength ) {
-            char lastChar = character;
-            character = regEx.charAt(index++);
-            this.acumString = this.acumString.concat("" + character);
-            if ( lastChar != '\\' && character == ']') {
-                break;
-            }
+    private boolean isReservedCharacter(char character) {
+        String reservedCharacters = ".*+?[]";
+        if (reservedCharacters.contains("" + character)) {
+            return true;
         }
-        return index;
+        return false;
     }
 
-    private boolean checkIfThereIsQuantifier(String regEx, int index) {
+    private boolean isValidAsLiteral(char character) {
+        if ( isReservedCharacter(character) && character != '.' ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private String getSetTokenFromToken(String regEx) throws BadFormatException {
         int regexLength = regEx.length();
-        if ( index < regexLength ) {
-            char character = regEx.charAt(index);
+        String token = "";
+        char character = '[';
+        while ( this.indexRegEx < regexLength ) {
+            char lastChar = character;
+            character = regEx.charAt(this.indexRegEx++);
+            token = token.concat("" + character);
+            if ( lastChar != '\\' && character == ']') {
+                // Finished
+                return token;
+            }
+            if ( lastChar != '\\' && isReservedCharacter(character) ) {
+                throw new BadFormatException();
+            }
+        }
+        // No ']' detected.
+        throw new BadFormatException();
+    }
+
+    private boolean checkIfThereIsQuantifier(String regEx) {
+        int regexLength = regEx.length();
+        if ( this.indexRegEx < regexLength ) {
+            char character = regEx.charAt(this.indexRegEx);
             if ( isQuantifier(character) ) {
                 return true;
             }
@@ -46,49 +67,55 @@ public class RegExGenerator {
         return false;
     }
 
-    private int getTokenWithOutQuantifier(String regEx, int index) {
-        char character = regEx.charAt(index++);
+    private String getTokenWithOutQuantifier(String regEx) throws BadFormatException {
+        char character = regEx.charAt(this.indexRegEx++);
         int regexLength = regEx.length();
 
+        String token;
         if ( character == '[' ) {
-            this.acumString = "" + character;
-            index = getSetTokenFromToken(regEx, index);
+            token = "" + character + getSetTokenFromToken(regEx);
         } else if ( character == '\\' ) {
             // escaped literal
-            if ( index < regexLength ) {
-                this.acumString = "" + character + regEx.charAt(index++);
+            if ( this.indexRegEx < regexLength ) {
+                token = "" + character + regEx.charAt(this.indexRegEx++);
+            } else {
+                // There is no escaped literal
+                throw new BadFormatException();
             }
         } else {
-            this.acumString = "" + character;
+            if ( !isValidAsLiteral(character) ) {
+                throw new BadFormatException();
+            }
+            token = "" + character;
         }
 
-        return index;
+        return token;
     }
 
-    private int getToken(String regEx, int index) {
+    private String getToken(String regEx) throws BadFormatException {
 
-        index = getTokenWithOutQuantifier(regEx, index);
+        String token = getTokenWithOutQuantifier(regEx);
 
-        if ( checkIfThereIsQuantifier(regEx,index) ) {
-            this.acumString = this.acumString.concat("" + regEx.charAt(index++));
+        if ( checkIfThereIsQuantifier(regEx) ) {
+            token = token.concat("" + regEx.charAt(this.indexRegEx++));
         }
 
-        return index;
+        return token;
     }
 
     // Preconditions: regEx is a well formed regular expression
-    private List<String> getTokens(String regEx) {
+    private List<String> getTokens(String regEx) throws BadFormatException {
         List<String> tokens = new ArrayList<>();
         if (regEx.isEmpty()) {
             return tokens;
         }
 
         int regexLength = regEx.length();
-        int index = 0;
-        while ( index < regexLength ) {
-            this.acumString = "";
-            index = getToken(regEx, index);
-            tokens.add(this.acumString);
+        this.indexRegEx = 0;
+        String token;
+        while ( this.indexRegEx < regexLength ) {
+            token = getToken(regEx);
+            tokens.add(token);
         }
         return tokens;
     }
@@ -137,21 +164,18 @@ public class RegExGenerator {
 
     private List<Character> getCharsFromSet(String token) {
         List<Character> list = new ArrayList<>();
-        char character = token.charAt(0);
         int index = 1;
         while ( index < token.length() ) {
-            char lastChar = character;
-            character = token.charAt(index++);
-            if ( lastChar != '\\' && character == ']' ) {
-                return list;
-            }
-
+            char character = token.charAt(index++);
             if ( character == '\\' ) {
                 character = token.charAt(index++);
+            } else if ( character == ']' ) {
+                return list;
             }
 
             list.add(character);
         }
+
         return list;
     }
 
@@ -179,7 +203,7 @@ public class RegExGenerator {
     }
 
 
-    public List<String> generate(String regEx, int numberOfResults) {
+    public List<String> generate(String regEx, int numberOfResults) throws BadFormatException {
         List<String> list = new ArrayList<>();
         List<String> tokens = getTokens(regEx);
         String result = "";
@@ -190,7 +214,6 @@ public class RegExGenerator {
             list.add(result);
             result = "";
         }
-
         return list;
     }
 }

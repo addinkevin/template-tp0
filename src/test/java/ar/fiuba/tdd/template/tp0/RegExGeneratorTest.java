@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class RegExGeneratorTest {
@@ -14,7 +15,12 @@ public class RegExGeneratorTest {
 
     private boolean validate(String regEx, int numberOfResults) {
         RegExGenerator generator = new RegExGenerator(this.maxLength);
-        List<String> results = generator.generate(regEx, numberOfResults);
+        List<String> results;
+        try {
+            results = generator.generate(regEx, numberOfResults);
+        } catch (BadFormatException badFormatException ) {
+            return false;
+        }
         // force matching the beginning and the end of the strings
         Pattern pattern = Pattern.compile("^" + regEx + "$", Pattern.DOTALL);
         return results
@@ -76,9 +82,15 @@ public class RegExGeneratorTest {
         assertTrue(validate("hol*a", 100));
         assertTrue(validate("", 100));
         assertTrue(validate("a", 100));
-        assertTrue(validate("[a.]", 100));
         assertTrue(validate("[a\\[\\]]", 100));
         assertTrue(validate("a.d?h*[abc]+", 100));
+
+        assertTrue(validate("[a\\?]", 100));
+
+        assertFalse(validate("abc++", 100));
+        assertFalse(validate("[aa[b]", 100));
+        assertFalse(validate("[a.]", 100));
+        assertFalse(validate("[a?]", 100));
     }
 
 }
