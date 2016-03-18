@@ -3,7 +3,6 @@ package ar.fiuba.tdd.template.tp0;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.StringJoiner;
 
 public class RegExGenerator {
     private int maxLength;
@@ -103,7 +102,6 @@ public class RegExGenerator {
         return token;
     }
 
-    // Preconditions: regEx is a well formed regular expression
     private List<String> getTokens(String regEx) throws BadFormatException {
         List<String> tokens = new ArrayList<>();
         if (regEx.isEmpty()) {
@@ -150,14 +148,17 @@ public class RegExGenerator {
         String output = "";
         Random rand = new Random();
         char character = token.charAt(0);
+        char charToConcat;
         for (int i = 0 ; i < getStringLengthToGenerate(token) ; i ++ ) {
             if ( character == '\\' ) {
-                output = output.concat("" + token.charAt(1));
+                charToConcat = token.charAt(1);
             } else if ( character == '.' ) {
-                output = output.concat("" + (char) rand.nextInt(256));
+                charToConcat = (char) rand.nextInt(256);
             } else {
-                output = output.concat("" + character);
+                charToConcat = character;
             }
+
+            output = output.concat("" + charToConcat);
         }
         return output;
     }
@@ -216,4 +217,5 @@ public class RegExGenerator {
         }
         return list;
     }
+
 }

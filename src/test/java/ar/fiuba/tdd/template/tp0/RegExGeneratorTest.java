@@ -70,27 +70,52 @@ public class RegExGeneratorTest {
     }
 
     @Test
-    public void testGeneral() {
-        assertTrue(validate(".*", 10000));
-        assertTrue(validate(".+", 100));
-        assertTrue(validate("\\.", 100));
-        assertTrue(validate("\\..", 100));
-        assertTrue(validate("\\.*", 100));
-        assertTrue(validate("hola", 100));
-        assertTrue(validate("ho.a", 100));
-        assertTrue(validate("hol?a", 100));
-        assertTrue(validate("hol*a", 100));
-        assertTrue(validate("", 100));
-        assertTrue(validate("a", 100));
-        assertTrue(validate("[a\\[\\]]", 100));
-        assertTrue(validate("a.d?h*[abc]+", 100));
+    public void testZeroOrMoreCharacter() {
+        assertTrue(validate("a*", 100));
+    }
 
-        assertTrue(validate("[a\\?]", 100));
+    @Test
+    public void testOneOrMoreCharacter() {
+        assertTrue(validate("a+", 100));
+    }
 
+    @Test
+    public void testNegativeTests() {
         assertFalse(validate("abc++", 100));
-        assertFalse(validate("[aa[b]", 100));
+        assertFalse(validate("[ab[c]", 100));
+        assertFalse(validate("[ab]c]", 100));
         assertFalse(validate("[a.]", 100));
         assertFalse(validate("[a?]", 100));
+        assertFalse(validate("[a+]", 100));
+    }
+
+    @Test
+    public void testDotWithQuantifiers() {
+        assertTrue(validate(".*", 100));
+        assertTrue(validate(".+", 100));
+        assertTrue(validate(".?", 100));
+    }
+
+    @Test
+    public void testEscapedLiteralsOnSetToken() {
+        assertTrue(validate("[a\\[\\]]", 100));
+        assertTrue(validate("[a\\?c]", 100));
+        assertTrue(validate("[a\\.c]", 100));
+    }
+
+    @Test
+    public void testEscapedLiteralWithQuantifiers() {
+        assertTrue(validate("\\.*", 100));
+        assertTrue(validate("\\+*", 100));
+        assertTrue(validate("\\?*", 100));
+        assertTrue(validate("\\**", 100));
+        assertTrue(validate("\\+?", 100));
+        assertTrue(validate("\\*+", 100));
+    }
+
+    @Test
+    public void testExhaustiveTest() {
+        assertTrue(validate("a.d?h*[abc\\]]+", 10000));
     }
 
 }
