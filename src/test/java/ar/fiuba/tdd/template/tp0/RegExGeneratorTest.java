@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 public class RegExGeneratorTest {
 
-    private int maxLength = 10;
+    private int maxLength = 25;
 
     private boolean validate(String regEx, int numberOfResults) {
         RegExGenerator generator = new RegExGenerator(this.maxLength);
@@ -22,7 +22,7 @@ public class RegExGeneratorTest {
             return false;
         }
         // force matching the beginning and the end of the strings
-        Pattern pattern = Pattern.compile("^" + regEx + "$", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("^" + regEx + "$");
         return results
                 .stream()
                 .reduce(true,

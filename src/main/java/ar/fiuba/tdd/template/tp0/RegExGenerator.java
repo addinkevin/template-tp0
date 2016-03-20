@@ -7,9 +7,19 @@ import java.util.Random;
 public class RegExGenerator {
     private int maxLength;
     private int indexRegEx;
+    private List<Integer> numbersToFilterForDotChar;
 
     public RegExGenerator(int maxLength) {
         this.maxLength = maxLength;
+        this.loadNumbersToFilterForDotChar();
+    }
+
+    private void loadNumbersToFilterForDotChar() {
+        this.numbersToFilterForDotChar = new ArrayList<>();
+        // Control characters(new lines) added to the filter because a error from Pattern
+        this.numbersToFilterForDotChar.add(10);
+        this.numbersToFilterForDotChar.add(13);
+        this.numbersToFilterForDotChar.add(133);
     }
 
     private boolean isQuantifier(char character) {
@@ -31,14 +41,13 @@ public class RegExGenerator {
         if ( isReservedCharacter(character) && character != '.' ) {
             return false;
         }
-
         return true;
     }
 
     private String getSetTokenFromToken(String regEx) throws BadFormatException {
         int regexLength = regEx.length();
-        String token = "";
-        char character = '[';
+        char character = regEx.charAt(this.indexRegEx++); // '[';
+        String token = "" + character;
         while ( this.indexRegEx < regexLength ) {
             char lastChar = character;
             character = regEx.charAt(this.indexRegEx++);
@@ -66,33 +75,39 @@ public class RegExGenerator {
         return false;
     }
 
-    private String getTokenWithOutQuantifier(String regEx) throws BadFormatException {
-        char character = regEx.charAt(this.indexRegEx++);
+    private String getEscapedLiteralFromToken(String regEx) throws BadFormatException {
         int regexLength = regEx.length();
+        char character = regEx.charAt(this.indexRegEx++); // character = \
+        if ( this.indexRegEx < regexLength ) {
+            return "" + character + regEx.charAt(this.indexRegEx++);
+        } else {
+            // There is no escaped literal
+            throw new BadFormatException();
+        }
+    }
 
+    private String getLiteralFromToken(String regEx) throws BadFormatException {
+        char character = regEx.charAt(this.indexRegEx++);
+        if ( !isValidAsLiteral(character) ) {
+            throw new BadFormatException();
+        }
+        return "" + character;
+    }
+
+    private String getTokenWithOutQuantifier(String regEx) throws BadFormatException {
+        char character = regEx.charAt(this.indexRegEx);
         String token;
         if ( character == '[' ) {
-            token = "" + character + getSetTokenFromToken(regEx);
+            token = getSetTokenFromToken(regEx);
         } else if ( character == '\\' ) {
-            // escaped literal
-            if ( this.indexRegEx < regexLength ) {
-                token = "" + character + regEx.charAt(this.indexRegEx++);
-            } else {
-                // There is no escaped literal
-                throw new BadFormatException();
-            }
+            token = getEscapedLiteralFromToken(regEx);
         } else {
-            if ( !isValidAsLiteral(character) ) {
-                throw new BadFormatException();
-            }
-            token = "" + character;
+            token = getLiteralFromToken(regEx);
         }
-
         return token;
     }
 
     private String getToken(String regEx) throws BadFormatException {
-
         String token = getTokenWithOutQuantifier(regEx);
 
         if ( checkIfThereIsQuantifier(regEx) ) {
@@ -118,16 +133,28 @@ public class RegExGenerator {
         return tokens;
     }
 
+    private int getRandomBetween(int infInclusive, int supInclusive) {
+        Random random = new Random();
+        return infInclusive + random.nextInt(supInclusive - infInclusive + 1);
+    }
+
+    private int getRandomBetweenWithOut(int infInclusive, int supInclusive, List<Integer> numbersToFilter) {
+        int random = getRandomBetween(infInclusive, supInclusive);
+        while ( numbersToFilter.contains(random) ) {
+            random = getRandomBetween(infInclusive, supInclusive);
+        }
+        return random;
+    }
+
     private int getRandomNumberFromOperation(char operation) {
-        Random rand = new Random();
         int randomNumber = 0;
         if ( operation == '+' ) {
-            randomNumber = rand.nextInt(this.maxLength) + 1;
+            randomNumber = getRandomBetween(1, this.maxLength);
         } else if ( operation == '?' ) {
-            randomNumber = rand.nextInt(2);
+            randomNumber = getRandomBetween(0,1);
         } else if ( operation == '*' ) {
             // Operation *
-            randomNumber = rand.nextInt(this.maxLength + 1);
+            randomNumber = getRandomBetween(0, this.maxLength);
         }
 
         return randomNumber;
@@ -146,14 +173,13 @@ public class RegExGenerator {
 
     private String generateStringFromLiteralToken(String token) {
         String output = "";
-        Random rand = new Random();
         char character = token.charAt(0);
         char charToConcat;
         for (int i = 0 ; i < getStringLengthToGenerate(token) ; i ++ ) {
             if ( character == '\\' ) {
                 charToConcat = token.charAt(1);
             } else if ( character == '.' ) {
-                charToConcat = (char) rand.nextInt(256);
+                charToConcat = (char) getRandomBetweenWithOut(0, 255, this.numbersToFilterForDotChar);
             } else {
                 charToConcat = character;
             }
@@ -182,10 +208,12 @@ public class RegExGenerator {
 
     private String generateStringFromSetToken(String token) {
         List<Character> chars = getCharsFromSet(token);
-        Random rand = new Random();
+        if ( chars.isEmpty()) {
+            return "";
+        }
         String output = "";
         for (int i = 0 ; i < getStringLengthToGenerate(token) ; i ++ ) {
-            int randomIndex = rand.nextInt(chars.size());
+            int randomIndex = getRandomBetween(0, chars.size() - 1);
             output = output.concat("" + chars.get(randomIndex));
         }
         return output;
@@ -202,7 +230,6 @@ public class RegExGenerator {
             return generateStringFromLiteralToken(token);
         }
     }
-
 
     public List<String> generate(String regEx, int numberOfResults) throws BadFormatException {
         List<String> list = new ArrayList<>();
