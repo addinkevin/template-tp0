@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 class RegExParser {
-
     private int indexRegEx;
 
     private boolean isReservedCharacter(char character) {
