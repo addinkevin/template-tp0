@@ -114,8 +114,13 @@ public class RegExGeneratorTest {
     }
 
     @Test
+    public void testManySets() {
+        assertTrue(validate("[abc][q\\[we]*[hjk]+[zxc]?", 100));
+    }
+
+    @Test
     public void testExhaustiveTest() {
-        assertTrue(validate("a.d?h*[abc\\]]+", 10000));
+        assertTrue(validate("a.d?h*[abc\\]]+z", 10000));
     }
 
 }
