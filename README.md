@@ -1,4 +1,5 @@
-# template-tp0
+# Trabajo practico número 0
 ![Build Status](https://travis-ci.org/addinkevin/template-tp0.svg?branch=master) 
 
-Template para el TP0
+Integrante:
+Addin Kevin
